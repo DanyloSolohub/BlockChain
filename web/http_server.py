@@ -1,4 +1,5 @@
 import socket
+from datetime import datetime
 from email.parser import Parser
 
 from web.response import Response
@@ -9,6 +10,10 @@ from web.request import Request
 class BaseHttpServer:
     MAX_LINE = 2 ** 6 * 2 ** 10
     MAX_HEADERS = 100
+    ISO_8859_1 = 'iso-8859-1'
+    UTF_8 = 'utf-8'
+    DEFAULT_CONTENT_TYPE = 'application/json; charset=utf-8'
+    DATE = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def __init__(self, host='127.0.0.1', port=2021, server_name=None):
         self._host = host
@@ -20,7 +25,7 @@ class BaseHttpServer:
 
     def serve_forever(self):
         self.server_socket.bind((self._host, self._port))
-        self.server_socket.listen()
+        self.server_socket.listen(10)
 
         while True:
             client_socket, _ = self.server_socket.accept()
@@ -29,20 +34,18 @@ class BaseHttpServer:
             except Exception as e:
                 print(f'Client serving failed, error - {e}')
             finally:
-                print('you here ')
                 client_socket.close()
 
     def serve_client(self, client_socket):
-        request = ''
         try:
             request = self.parse_request(client_socket)
             response = self.handle_request(request)
             self.send_response(client_socket, response)
         except Exception as e:
             self.send_error(client_socket, e)
+        else:
+            request.rfile.close()
         finally:
-            if isinstance(request, Request):
-                request.rfile.close()
             client_socket.close()
 
     def parse_request(self, client_socket):
@@ -63,15 +66,15 @@ class BaseHttpServer:
         if len(raw) > self.MAX_LINE:
             raise HTTPError(400, 'Request line is too long')
 
-        req_line = str(raw, 'iso-8859-1')
+        req_line = str(raw, self.ISO_8859_1)
         words = req_line.split()
         if len(words) != 3:
             raise HTTPError(400, 'Malformed request line')
 
-        method, target, ver = words
-        if ver != 'HTTP/1.1':
+        method, target, version = words
+        if version != 'HTTP/1.1':
             raise HTTPError(505)
-        return method, target, ver
+        return method, target, version
 
     def parse_headers(self, rfile):
         headers = []
@@ -87,7 +90,7 @@ class BaseHttpServer:
             if len(headers) > self.MAX_HEADERS:
                 raise HTTPError(494, 'Too many headers')
 
-        sheaders = b''.join(headers).decode('iso-8859-1')
+        sheaders = b''.join(headers).decode(self.ISO_8859_1)
         return Parser().parsestr(sheaders)
 
     def handle_request(self, request):
@@ -99,41 +102,43 @@ class BaseHttpServer:
         method_handler = handlers.get(request.method)
         if method_handler:
             return method_handler(request)
-        raise HTTPError(404, 'Not found')
+        raise HTTPError(404)
 
     def send_response(self, client_socket, response):
         wfile = client_socket.makefile('wb')
         status_line = f'HTTP/1.1 {response.status} {response.reason}\r\n'
-        wfile.write(status_line.encode('iso-8859-1'))
+        wfile.write(status_line.encode(self.ISO_8859_1))
 
         if response.headers:
             for (key, value) in response.headers:
                 header_line = f'{key}: {value}\r\n'
-                wfile.write(header_line.encode('iso-8859-1'))
-
+                wfile.write(header_line.encode(self.ISO_8859_1))
+        else:
+            header_line = f'Content-Type: {self.DEFAULT_CONTENT_TYPE}\r\n'
+            header_line += f'Date: {self.DATE}\r\n'
+            if response.body:
+                header_line += f'Content-Length: {len(response.body)}\r\n'
+            wfile.write(header_line.encode(self.ISO_8859_1))
         wfile.write(b'\r\n')
 
         if response.body:
-            wfile.write(response.body)
+            wfile.write(response.body.encode(self.UTF_8))
 
         wfile.flush()
         wfile.close()
 
-    def send_error(self, conn, err):
+    def send_error(self, client_socket, error):
         try:
-            status = err.status
-            reason = err.reason
-            body = (err.body or err.reason).encode('utf-8')
+            status = error.status
+            body = error.body
         except AttributeError:
             status = 500
-            reason = b'Internal Server Error'
-            body = b'Internal Server Error'
-        resp = Response(status, reason,
-                        [('Content-Length', len(body))],
-                        body)
-        self.send_response(conn, resp)
+            body = 'Internal Server Error'
+        response = Response(status=status, body=body)
+        self.send_response(client_socket, response)
 
     def get(self, request):
+        # return Response(200, body=json.dumps({'u are pussy': 'yes'}))
         raise HTTPError(405, f'Method {request.method} not allowed')
 
     def post(self, request):
@@ -147,11 +152,3 @@ class BaseHttpServer:
 
     def delete(self, request):
         raise HTTPError(405, f'Method {request.method} not allowed')
-
-
-if __name__ == '__main__':
-    server = BaseHttpServer()
-    # try:
-    server.serve_forever()
-    # except KeyboardInterrupt:
-    #     pass
