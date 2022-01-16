@@ -41,7 +41,7 @@ class BaseHttpServer:
             request = self.parse_request(client_socket)
             response = self.handle_request(request)
             self.send_response(client_socket, response)
-        except Exception as e:
+        except (Exception, HTTPError) as e:
             self.send_error(client_socket, e)
         else:
             request.rfile.close()
