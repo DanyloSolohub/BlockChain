@@ -66,8 +66,8 @@ class BaseHttpServer:
         if len(raw) > self.MAX_LINE:
             raise HTTPError(400, 'Request line is too long')
 
-        req_line = str(raw, self.ISO_8859_1)
-        words = req_line.split()
+        request_line = str(raw, encoding=self.ISO_8859_1)
+        words = request_line.split()
         if len(words) != 3:
             raise HTTPError(400, 'Malformed request line')
 
