@@ -16,11 +16,11 @@ class P2P:
         # Максимальное кол-во подключений
         self.max_clients = _max_clients
         # Подключённые пользователи
-        self.clients_ip = ["" for i in range(self.max_clients)]
+        self.clients_ip = ["" for _ in range(self.max_clients)]
         # Словарь с входящими сообщениями
         self.incoming_requests = {}
         # Логи клиентов
-        self.clients_logs = [Log for i in range(self.max_clients)]
+        self.clients_logs = [Log for _ in range(self.max_clients)]
         # Клиентские сокеты
         self.client_sockets = [socket.socket() for i in range(self.max_clients)]
         # Таймауты клиентов
