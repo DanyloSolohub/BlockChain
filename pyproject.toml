@@ -6,6 +6,7 @@ authors = ["DanyloSolohub <danylo.solohub.te.2019@lpnu.ua>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
+rsa = "^4.8"
 
 [tool.poetry.dev-dependencies]
 

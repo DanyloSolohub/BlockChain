@@ -2,9 +2,9 @@ import socket
 from datetime import datetime
 from email.parser import Parser
 
-from web.response import Response
-from web.error import HTTPError
-from web.request import Request
+from servers.web.response import Response
+from servers.web.error import HTTPError
+from servers.web.request import Request
 
 
 class BaseHttpServer:
