@@ -33,7 +33,7 @@ class BlockChain:
 
     def generate_next_block(self, block_data: str) -> Block:
         prev_block: Block = self.get_last_block()
-        next_index = prev_block.index + 1
+        next_index: int = prev_block.index + 1
         next_timestamp = datetime.now().timestamp()
         next_hash = self.calculate_hash(index=next_index, previous_hash=prev_block.current_hash, block_data=block_data)
         return Block(index=next_index,
