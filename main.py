@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv, find_dotenv
+import web
 
 load_dotenv(find_dotenv())
 SWAGGER_URL = os.getenv('SWAGGER_URL')
@@ -14,3 +15,4 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(web.router)
