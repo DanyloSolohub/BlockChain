@@ -26,6 +26,9 @@ class BlockChain:
 
     @staticmethod
     def get_genesis_block() -> Block:
+        """
+        :return: first "Genesis" block
+        """
         return Block(0, '0', 1642346961.018641, 'Genesis block',
                      '704242bb7fe5c275c19085eb8a139e7631ab444388dc9d01d5066f4cfa53a85b')
 
@@ -36,10 +39,21 @@ class BlockChain:
             timestamp: float,
             block_data: str
     ) -> str:
+        """
+        calculates a hash
+        :param index: block index
+        :param previous_hash: hash of previous block
+        :param timestamp: timestamp
+        :param block_data: some data which must contains in block
+        :return: hash
+        """
         data = str(index) + previous_hash + str(timestamp) + block_data
         return sha256(data.encode('utf-8')).hexdigest()
 
     def get_last_block(self) -> Block:
+        """
+        :return: last block of the blockchain
+        """
         return self.block_chain[-1]
 
     def generate_next_block(
@@ -47,9 +61,9 @@ class BlockChain:
             block_data: str
     ) -> Block:
         """
-
-        :param block_data:
-        :return:
+        Generates the next block
+        :param block_data: some data which must contains in block
+        :return: block
         """
         prev_block: Block = self.get_last_block()
         next_index: int = prev_block.index + 1
@@ -89,7 +103,7 @@ class BlockChain:
             new_block: Block
     ) -> bool:
         """
-        Verify new block compared with previous
+        Verify new block, compare with previous
         :param prev_block: previous Block
         :param new_block: new Block
         :return: True if new block is valid, False if not
@@ -134,4 +148,5 @@ class BlockChain:
             self.block_chain = new_blocks
             return True
         return False
+
 # https://dev.to/freakcdev297/creating-a-blockchain-in-60-lines-of-javascript-5fka
