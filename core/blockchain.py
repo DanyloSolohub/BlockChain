@@ -1,16 +1,8 @@
-from dataclasses import dataclass
 from datetime import datetime
-from hashlib import sha256
 from typing import List
-
-
-@dataclass
-class Block:
-    index: int
-    previous_hash: str
-    timestamp: float  # 'datetime.now().timestamp()'
-    block_data: str
-    current_hash: str
+from core.block import Block
+from urllib.parse import urlparse
+from core.transaction import Transaction
 
 
 class BlockChain:
@@ -21,40 +13,47 @@ class BlockChain:
             cls.instance = super().__new__(cls)
         return cls.instance
 
-    def __init__(self) -> None:
-        self.block_chain = [self.get_genesis_block()]
+    def __init__(self):
+        self.chain = [self.get_genesis_block()]
+        self.pending_transactions = []
+        self.nodes = set()
+        self.__difficult = 1
+        self.__reward = 1000
+
+    @property
+    def difficult(self):
+        chain_len = len(self.chain)
+        sum_part = (chain_len // 10000)
+        return self.__difficult + sum_part
+
+    @property
+    def reward(self):
+        chain_len = len(self.chain)
+        division_part = (chain_len // 10000) + 1
+        return self.__reward // division_part
+
+    def get_balance(self, address):
+        balance = 0
+        for block in self.chain:
+            for transaction in block.transactions:
+                if transaction.sender == address:
+                    balance -= transaction.amount
+                elif transaction.recipient == address:
+                    balance += transaction.amount
+        return balance
 
     @staticmethod
     def get_genesis_block() -> Block:
         """
         :return: first "Genesis" block
         """
-        return Block(0, '0', 1642346961.018641, 'Genesis block',
-                     '704242bb7fe5c275c19085eb8a139e7631ab444388dc9d01d5066f4cfa53a85b')
-
-    @staticmethod
-    def calculate_hash(
-            index: int,
-            previous_hash: str,
-            timestamp: float,
-            block_data: str
-    ) -> str:
-        """
-        calculates a hash
-        :param index: block index
-        :param previous_hash: hash of previous block
-        :param timestamp: timestamp
-        :param block_data: some data which must contains in block
-        :return: hash
-        """
-        data = str(index) + previous_hash + str(timestamp) + block_data
-        return sha256(data.encode('utf-8')).hexdigest()
+        return Block(0, '0', 1642346961.018641, 'Genesis block')
 
     def get_last_block(self) -> Block:
         """
-        :return: last block of the blockchain
+        :return: last block of the core
         """
-        return self.block_chain[-1]
+        return self.chain[-1]
 
     def generate_next_block(
             self,
@@ -68,21 +67,21 @@ class BlockChain:
         prev_block: Block = self.get_last_block()
         next_index: int = prev_block.index + 1
         next_timestamp = datetime.now().timestamp()
-        next_hash = self.calculate_hash(
-            index=next_index,
-            previous_hash=prev_block.current_hash,
-            block_data=block_data
-        )
         return Block(
             index=next_index,
             previous_hash=prev_block.current_hash,
             timestamp=next_timestamp,
             block_data=block_data,
-            current_hash=next_hash
         )
 
+    def mine_pending_transactions(self, miner_address):
+        pass
+
+    def create_transaction(self, transaction: Transaction):
+        self.pending_transactions.append(transaction)
+
+    @staticmethod
     def calculate_hash_for_block(
-            self,
             block: Block
     ) -> str:
         """
@@ -90,7 +89,8 @@ class BlockChain:
         :param block: Block
         :return: calculated hash
         """
-        return self.calculate_hash(
+        return Block.calculate_hash(
+            nonce=block.nonce,
             index=block.index,
             previous_hash=block.previous_hash,
             timestamp=block.timestamp,
@@ -125,7 +125,7 @@ class BlockChain:
         :param chain_to_validate: chain which should be verified
         :return: True if chain is valid, False if not
         """
-        if chain_to_validate[0] != self.block_chain[0]:
+        if chain_to_validate[0] != self.chain[0]:
             return False
         temporary_blocks = [chain_to_validate[0]]
         for block in chain_to_validate:
@@ -144,9 +144,16 @@ class BlockChain:
         :param new_blocks: chain which could become new chain
         :return: True if chain has been replaced
         """
-        if len(new_blocks) > len(self.block_chain) and self.is_chain_valid(new_blocks):
-            self.block_chain = new_blocks
+        if len(new_blocks) > len(self.chain) and self.is_chain_valid(new_blocks):
+            self.chain = new_blocks
             return True
         return False
 
-# https://dev.to/freakcdev297/creating-a-blockchain-in-60-lines-of-javascript-5fka
+    def register_node(self, address):
+        """
+        Add a new node to the list of nodes
+        :param address: Address of node. Eg. 'http://192.168.0.5:5000'
+        """
+
+        parsed_url = urlparse(address)
+        self.nodes.add(parsed_url.netloc)
