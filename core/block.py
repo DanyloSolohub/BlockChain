@@ -1,27 +1,27 @@
-from typing import List
 from dataclasses import dataclass, field
 from hashlib import sha256
+from typing import List
 
 from core.transaction import Transaction
 
 
 @dataclass
 class Block:
-    index: int
-    previous_hash: str
-    timestamp: float  # 'datetime.now().timestamp()'
-    block_data: str
-    transactions: List[Transaction] = None
     nonce: int = field(init=False, default=0)
+    difficulty: int
     current_hash: str = field(init=False)
+    previous_hash: str
+    transactions: List[Transaction]
+    mapping: dict
+    miner: str
+    signature: str
+    timestamp: float  # 'datetime.now().timestamp()'
 
     def __post_init__(self):
         self.current_hash = self.calculate_hash(
             nonce=self.nonce,
-            index=self.index,
             previous_hash=self.previous_hash,
             timestamp=self.timestamp,
-            block_data=self.block_data
         )
 
     def mine_block(self, difficult):
@@ -29,10 +29,8 @@ class Block:
             self.nonce += 1
             self.current_hash = self.calculate_hash(
                 nonce=self.nonce,
-                index=self.index,
                 previous_hash=self.previous_hash,
                 timestamp=self.timestamp,
-                block_data=self.block_data
             )
 
     @staticmethod
@@ -41,7 +39,6 @@ class Block:
             index: int,
             previous_hash: str,
             timestamp: float,
-            block_data: str
     ) -> str:
         """
         calculates a hash
@@ -49,8 +46,7 @@ class Block:
         :param index: block index
         :param previous_hash: hash of previous block
         :param timestamp: timestamp
-        :param block_data: some data which must contains in block
         :return: hash
         """
-        data = str(nonce) + str(index) + previous_hash + str(timestamp) + block_data
+        data = str(nonce) + str(index) + previous_hash + str(timestamp)
         return sha256(data.encode('utf-8')).hexdigest()

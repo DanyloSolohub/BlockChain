@@ -6,10 +6,10 @@ authors = ["DanyloSolohub <danylo.solohub.te.2019@lpnu.ua>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-rsa = "^4.8"
 fastapi = "^0.74.0"
 python-dotenv = "^0.19.2"
 uvicorn = {extras = ["standard"], version = "^0.17.5"}
+pycryptodome = "^3.14.1"
 
 [tool.poetry.dev-dependencies]
 

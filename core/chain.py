@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import List
-from core.block import Block
 from urllib.parse import urlparse
+
+from core.block import Block
 from core.transaction import Transaction
 
 
@@ -15,7 +16,7 @@ class BlockChain:
 
     def __init__(self):
         self.chain = [self.get_genesis_block()]
-        self.pending_transactions = []
+        self.transactions = []
         self.nodes = set()
         self.__difficult = 1
         self.__reward = 1000
@@ -74,11 +75,8 @@ class BlockChain:
             block_data=block_data,
         )
 
-    def mine_pending_transactions(self, miner_address):
-        pass
-
-    def create_transaction(self, transaction: Transaction):
-        self.pending_transactions.append(transaction)
+    def add_transaction(self, transaction: Transaction):
+        self.transactions.append(transaction)
 
     @staticmethod
     def calculate_hash_for_block(

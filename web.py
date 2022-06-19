@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from core.blockchain import BlockChain
+from core.chain import BlockChain
 from utils.exceptions import UNAUTHORIZED
 
 router = APIRouter(prefix='/api/v1')
