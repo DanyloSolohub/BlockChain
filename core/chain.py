@@ -15,11 +15,26 @@ class BlockChain:
         return cls.instance
 
     def __init__(self):
-        self.chain = [self.get_genesis_block()]
+        self.chain = [self.genesis_block]
         self.transactions = []
         self.nodes = set()
         self.__difficult = 1
         self.__reward = 1000
+
+    @property
+    def genesis_block(self) -> Block:
+        """
+        :return: first "Genesis" block
+        """
+        return Block(
+            height=0,
+            difficulty=self.difficult,
+            previous_hash=None,
+            transactions=[],
+            mapping=None,
+            miner=None,
+            timestamp=1642346961.018641,
+        )
 
     @property
     def difficult(self):
@@ -33,6 +48,13 @@ class BlockChain:
         division_part = (chain_len // 10000) + 1
         return self.__reward // division_part
 
+    @property
+    def last_block(self) -> Block:
+        """
+        :return: last block of the core
+        """
+        return self.chain[-1]
+
     def get_balance(self, address):
         balance = 0
         for block in self.chain:
@@ -43,36 +65,20 @@ class BlockChain:
                     balance += transaction.amount
         return balance
 
-    @staticmethod
-    def get_genesis_block() -> Block:
-        """
-        :return: first "Genesis" block
-        """
-        return Block(0, '0', 1642346961.018641, 'Genesis block')
-
-    def get_last_block(self) -> Block:
-        """
-        :return: last block of the core
-        """
-        return self.chain[-1]
-
     def generate_next_block(
             self,
-            block_data: str
     ) -> Block:
         """
         Generates the next block
-        :param block_data: some data which must contains in block
         :return: block
         """
-        prev_block: Block = self.get_last_block()
-        next_index: int = prev_block.index + 1
+        prev_block: Block = self.last_block
+        next_height: int = prev_block.height + 1
         next_timestamp = datetime.now().timestamp()
         return Block(
-            index=next_index,
+            height=next_height,
             previous_hash=prev_block.current_hash,
             timestamp=next_timestamp,
-            block_data=block_data,
         )
 
     def add_transaction(self, transaction: Transaction):
@@ -89,10 +95,9 @@ class BlockChain:
         """
         return Block.calculate_hash(
             nonce=block.nonce,
-            index=block.index,
+            height=block.height,
             previous_hash=block.previous_hash,
             timestamp=block.timestamp,
-            block_data=block.block_data
         )
 
     def is_new_block_valid(
@@ -106,7 +111,7 @@ class BlockChain:
         :param new_block: new Block
         :return: True if new block is valid, False if not
         """
-        if prev_block.index + 1 != new_block.index:
+        if prev_block.height + 1 != new_block.height:
             return False
         elif prev_block.current_hash != new_block.previous_hash:
             return False

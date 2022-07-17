@@ -6,7 +6,7 @@ import web
 
 load_dotenv(find_dotenv())
 SWAGGER_URL = os.getenv('SWAGGER_URL')
-KEY_SIZE = os.getenv('KEY_SIZE')
+KEY_SIZE = int(os.getenv('KEY_SIZE'))
 
 app = FastAPI(docs_url=SWAGGER_URL, redoc_url=None)
 app.add_middleware(
