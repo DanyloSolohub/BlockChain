@@ -51,5 +51,6 @@ class Block:
         :param timestamp: timestamp
         :return: hash
         """
+
         data = str(nonce) + str(height) + previous_hash + str(timestamp)
         return sha256(data.encode('utf-8')).hexdigest()
